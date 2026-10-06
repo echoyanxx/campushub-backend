@@ -1,16 +1,7 @@
 import { z } from 'zod';
-import Reservation from '../models/Reservation';
-import Resource from '../models/Resource';
+import Reservation from '../models/Reservation.model';
+import Resource from '../models/Resource.model';
 import User from '../models/User';
-
-const createReservationSchema = z
-  .object({
-    resourceId: z.string().min(1, 'resourceId is required'),
-    userId: z.string().min(1, 'userId is required'),
-    startTime: z.string().min(1, 'startTime is required'),
-    endTime: z.string().min(1, 'endTime is required'),
-  })
-  .strict();
 
 export interface ReservationServiceError {
   status: number;
@@ -28,17 +19,30 @@ const createReservationError = (status: number, message: string, error?: string)
   },
 });
 
-const parseDate = (value: string, fieldName: string): Date => {
-  const date = new Date(value);
+const createReservationSchema = z
+  .object({
+    resourceId: z.string().min(1, 'resourceId is required'),
+    userId: z.string().min(1, 'userId is required'),
+    startTime: z.string().min(1, 'startTime is required'),
+    endTime: z.string().min(1, 'endTime is required'),
+  })
+  .strict();
 
-  if (Number.isNaN(date.getTime())) {
-    throw createReservationError(400, `${fieldName} must be a valid date.`);
-  }
-
-  return date;
+const isValidIsoDateTime = (value: string): boolean => {
+  const isoPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/;
+  return isoPattern.test(value) && !Number.isNaN(Date.parse(value));
 };
 
-export const createReservation = async (body: unknown) => {
+export const getReservationsByUser = async (userId: string): Promise<unknown[]> => {
+  return Reservation.find({
+    userId,
+    status: { $ne: 'CANCELLED' },
+  })
+    .sort({ startTime: 1 })
+    .exec();
+};
+
+export const createReservation = async (body: unknown): Promise<unknown> => {
   const parsedBody = createReservationSchema.safeParse(body);
 
   if (!parsedBody.success) {
@@ -48,21 +52,25 @@ export const createReservation = async (body: unknown) => {
 
   const { resourceId, userId, startTime, endTime } = parsedBody.data;
 
-  const start = parseDate(startTime, 'startTime');
-  const end = parseDate(endTime, 'endTime');
+  if (!isValidIsoDateTime(startTime) || !isValidIsoDateTime(endTime)) {
+    throw createReservationError(400, 'startTime and endTime must be valid ISO 8601 date-time strings.', 'INVALID_DATE_TIME');
+  }
+
+  const start = new Date(startTime);
+  const end = new Date(endTime);
 
   if (start >= end) {
-    throw createReservationError(400, 'startTime must be before endTime.');
+    throw createReservationError(400, 'startTime must be before endTime.', 'INVALID_TIME_RANGE');
   }
 
-  const resource = await Resource.findById(resourceId);
+  const resource = await Resource.findById(resourceId).exec();
   if (!resource) {
-    throw createReservationError(404, 'Resource not found.');
+    throw createReservationError(404, 'Resource not found.', 'RESOURCE_NOT_FOUND');
   }
 
-  const user = await User.findById(userId);
+  const user = await User.findById(userId).exec();
   if (!user) {
-    throw createReservationError(404, 'User not found.');
+    throw createReservationError(404, 'User not found.', 'USER_NOT_FOUND');
   }
 
   const conflict = await Reservation.findOne({
@@ -75,18 +83,16 @@ export const createReservation = async (body: unknown) => {
   if (conflict) {
     throw createReservationError(
       409,
-      'The resource is already reserved during the requested time block.',
-      'RESERVATION_CONFLICT'
+      'Resource is already reserved for this time slot.',
+      'DOUBLE_BOOKING'
     );
   }
 
-  const reservation = await Reservation.create({
+  return Reservation.create({
     resourceId,
     userId,
     startTime: start,
     endTime: end,
     status: 'PENDING',
   });
-
-  return reservation;
 };
