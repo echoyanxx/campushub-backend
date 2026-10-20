@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: CampusHub Reservation API
-  version: 1.0.0
-  description: Lab 2 OpenAPI contract for CampusHub resources and reservations.
+  version: 1.1.0
+  description: CampusHub Lab 4 reservation engine. Reservation creation requires a MongoDB replica set or sharded cluster.
 servers:
   - url: http://localhost:3000/api/v1
 paths:
@@ -10,111 +10,191 @@ paths:
     get:
       summary: List campus resources
       operationId: listResources
+      description: Filters are optional and combined with AND. Availability is the stored resource flag, not a time-window lookup.
       parameters:
         - name: type
           in: query
           required: false
           schema:
             type: string
-            enum:
-              - ROOM
-              - EQUIPMENT
-              - LAB
+            enum: [ROOM, EQUIPMENT, LAB]
+        - name: isAvailable
+          in: query
+          required: false
+          schema:
+            type: boolean
       responses:
-        "200":
-          description: Resources retrieved successfully
+        '200':
+          description: Resources sorted by name
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Resource"
+                  $ref: '#/components/schemas/Resource'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /reservations:
     post:
-      summary: Create a reservation
+      summary: Create a pending reservation
       operationId: createReservation
+      description: >-
+        startTime must precede endTime. PENDING and CONFIRMED reservations on the
+        same resource conflict when existing.startTime < requested.endTime AND
+        existing.endTime > requested.startTime. Adjacent bookings are allowed.
+        CANCELLED bookings do not block creation. Concurrent creations for one
+        resource are serialized inside a transaction.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Reservation"
+              $ref: '#/components/schemas/CreateReservationRequest'
       responses:
-        "201":
-          description: Reservation created successfully
+        '201':
+          description: Reservation created with status PENDING
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Reservation"
-        "409":
-          description: Resource is already reserved during the requested time block
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: An overlapping active booking exists for this resource
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: DOUBLE_BOOKING
+                message: Resource is already reserved for this time slot.
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /reservations/user/{userId}:
     get:
-      summary: Get active reservations for a user
+      summary: Get all reservations for a user
       operationId: getReservationsByUser
+      description: Includes PENDING, CONFIRMED, and CANCELLED bookings, sorted by startTime. Returns an empty array when there are no bookings.
       parameters:
         - name: userId
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/Identifier'
       responses:
-        "200":
-          description: Active reservations for the user
+        '200':
+          description: All reservations belonging to the specified user
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Reservation"
+                  $ref: '#/components/schemas/Reservation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /reservations/{id}/cancel:
+    patch:
+      summary: Cancel a reservation
+      operationId: cancelReservation
+      description: >-
+        Atomically changes PENDING or CONFIRMED to CANCELLED, freeing the slot.
+        Repeating cancellation returns the cancelled reservation with 200.
+        No request body is required. This endpoint never reactivates a booking.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Identifier'
+      responses:
+        '200':
+          description: The cancelled reservation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
 components:
+  responses:
+    BadRequest:
+      description: Invalid query, identifier, JSON body, timestamps, or time range
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: The referenced resource, user, or reservation does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: An unexpected server or database error occurred
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    Identifier:
+      type: string
+      pattern: '^[a-fA-F0-9]{24}$'
     Resource:
       type: object
       additionalProperties: false
-      required:
-        - id
-        - name
-        - type
-        - isAvailable
+      required: [id, name, type, isAvailable, location]
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/Identifier'
         name:
           type: string
         type:
           type: string
-          enum:
-            - ROOM
-            - EQUIPMENT
-            - LAB
+          enum: [ROOM, EQUIPMENT, LAB]
         isAvailable:
           type: boolean
-
+        location:
+          type: string
+    CreateReservationRequest:
+      type: object
+      additionalProperties: false
+      required: [resourceId, userId, startTime, endTime]
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/Identifier'
+        userId:
+          $ref: '#/components/schemas/Identifier'
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
     Reservation:
       type: object
       additionalProperties: false
-      required:
-        - id
-        - resourceId
-        - userId
-        - startTime
-        - endTime
-        - status
+      required: [id, resourceId, userId, startTime, endTime, status]
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/Identifier'
         resourceId:
-          type: string
+          $ref: '#/components/schemas/Identifier'
         userId:
-          type: string
+          $ref: '#/components/schemas/Identifier'
         startTime:
           type: string
           format: date-time
@@ -123,17 +203,11 @@ components:
           format: date-time
         status:
           type: string
-          enum:
-            - PENDING
-            - CONFIRMED
-            - CANCELLED
-
+          enum: [PENDING, CONFIRMED, CANCELLED]
     ErrorResponse:
       type: object
       additionalProperties: false
-      required:
-        - code
-        - message
+      required: [code, message]
       properties:
         code:
           type: string

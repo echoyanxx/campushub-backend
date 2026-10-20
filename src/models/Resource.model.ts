@@ -7,6 +7,7 @@ export interface IResource extends Document {
   type: ResourceTypeValue;
   location: string;
   isAvailable: boolean;
+  reservationVersion: number;
 }
 
 const resourceSchema = new Schema<IResource>(
@@ -31,10 +32,15 @@ const resourceSchema = new Schema<IResource>(
       required: true,
       default: true,
     },
+    reservationVersion: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export const Resource: Model<IResource> = mongoose.model<IResource>('Resource', resourceSchema);

@@ -6,15 +6,11 @@
   },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": "./tsconfig.json",
+    "project": ["./tsconfig.json", "./tests/tsconfig.json"],
     "tsconfigRootDir": "/Users/echoyan/NEU/CS5500/campushub-backend"
   },
   "plugins": ["@typescript-eslint"],
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
-  ],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
   "ignorePatterns": ["dist", "node_modules"],
   "rules": {
     "@typescript-eslint/no-unused-vars": [

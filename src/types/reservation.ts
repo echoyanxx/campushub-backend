@@ -6,6 +6,7 @@ export interface Resource {
   name: string;
   type: ResourceType;
   isAvailable: boolean;
+  location: string;
 }
 
 export interface Reservation {
@@ -30,5 +31,6 @@ export interface CreateReservationRequest {
 }
 
 export interface ResourceQuery {
-  type?: string;
+  type?: ResourceType;
+  isAvailable?: boolean;
 }

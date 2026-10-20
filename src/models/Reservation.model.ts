@@ -39,9 +39,15 @@ const reservationSchema = new Schema<IReservation>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-export const Reservation: Model<IReservation> = mongoose.model<IReservation>('Reservation', reservationSchema);
+reservationSchema.index({ resourceId: 1, status: 1, startTime: 1, endTime: 1 });
+reservationSchema.index({ userId: 1, startTime: 1 });
+
+export const Reservation: Model<IReservation> = mongoose.model<IReservation>(
+  'Reservation',
+  reservationSchema,
+);
 
 export default Reservation;
