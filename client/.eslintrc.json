@@ -1,0 +1,16 @@
+{
+  "root": true,
+  "env": { "browser": true, "es2024": true },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": ["./tsconfig.app.json", "./tsconfig.node.json", "./tsconfig.test.json"]
+  },
+  "plugins": ["@typescript-eslint"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
+  "ignorePatterns": ["dist", "node_modules"],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/explicit-function-return-type": "error"
+  },
+  "overrides": [{ "files": ["vite.config.ts", "tests/**/*.ts"], "env": { "node": true } }]
+}

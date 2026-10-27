@@ -1,0 +1,20 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.filters button[aria-pressed='true'] {
+  background: #193d2c;
+  border-color: #193d2c;
+  color: #fff;
+}
+
+.resources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}

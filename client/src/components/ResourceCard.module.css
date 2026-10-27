@@ -1,0 +1,57 @@
+.card {
+  padding: 1.5rem;
+  border: 1px solid #dce3df;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.topLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+}
+
+.type {
+  color: #53665d;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.available,
+.unavailable {
+  padding: 0.3rem 0.6rem;
+  border-radius: 1rem;
+}
+
+.available {
+  color: #1e6345;
+  background: #e5f3e9;
+}
+
+.unavailable {
+  color: #6d5252;
+  background: #f4eaea;
+}
+
+.card h3 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+.card p {
+  margin: 0;
+  color: #53665d;
+  overflow-wrap: anywhere;
+}
+
+.select {
+  width: 100%;
+  margin-top: 1.5rem;
+}
+.select[aria-pressed='true'] {
+  background: #193d2c;
+  color: #fff;
+}

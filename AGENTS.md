@@ -2,6 +2,23 @@
 
 This repository is the backend service for CampusHub. The AI assistant operating in this repo must follow these rules exactly and treat them as the governing contract for all code generation, edits, and refactors.
 
+## Lab 5 frontend scope exception
+
+Lab 5 explicitly authorizes a separate React/TypeScript/Vite application under `client/`.
+Frontend dependencies, browser code, and CSS Modules belong only in that directory;
+the backend stack and Route -> Controller -> Service -> Model rules still apply to
+the backend. This exception supersedes the backend-only restrictions below only
+for `client/`. Do not create or modify `.js` source/configuration files.
+
+- Use functional components with explicit prop interfaces and return types.
+- Use React hooks or custom hooks for state, loading, errors, and effect cleanup.
+- Keep HTTP calls in `client/src/api/campushubApi.ts`, outside JSX and components.
+- Follow `docs/openapi.yaml` for DTOs, enum values, paths, methods, and error bodies.
+- Use CSS Modules for component styles and a small global stylesheet for base styles.
+- Use Vite environment variables for public browser configuration; never expose secrets.
+- Keep frontend dependencies, scripts, TypeScript configuration, and build output separate.
+- Run the frontend typecheck, build, lint, and API tests before completing frontend changes.
+
 ## 1) Tech Stack & Libraries
 
 ### Authorized stack

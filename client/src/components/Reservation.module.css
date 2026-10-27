@@ -1,0 +1,96 @@
+.panel {
+  padding: 1.5rem;
+  border: 1px solid #dce3df;
+  border-radius: 0.75rem;
+  background: #fff;
+  min-width: 0;
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.heading h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.fields {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+.fields label {
+  font-weight: 600;
+}
+.legend {
+  padding: 0;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+.hint {
+  color: #53665d;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.primary {
+  background: #193d2c;
+  color: #fff;
+  border-color: #193d2c;
+}
+.message,
+.error,
+.success {
+  padding: 1rem;
+  border: 1px solid #dce3df;
+  border-radius: 0.5rem;
+}
+.error {
+  color: #8b2929;
+  border-color: #e9baba;
+  background: #fff4f4;
+}
+.success {
+  color: #1e6345;
+  border-color: #a4cbb0;
+  background: #e5f3e9;
+}
+.fieldError {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #8b2929;
+}
+.bookings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+}
+.booking {
+  padding: 1rem;
+  border: 1px solid #dce3df;
+  border-radius: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.booking h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  background: #eef2ed;
+  color: #35563e;
+  font-size: 0.75rem;
+}

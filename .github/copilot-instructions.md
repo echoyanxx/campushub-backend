@@ -2,6 +2,12 @@
 
 This repository is the backend service for CampusHub, a multi-tenant campus resource management system. Keep all implementation work scoped to the backend and TypeScript/Node.js runtime.
 
+Lab 5 exception: `client/` is an explicitly authorized React/TypeScript/Vite frontend.
+Within `client/`, follow the frontend rules in `AGENTS.md`: functional components with
+typed props, React hooks, API calls isolated in `src/api/campushubApi.ts`, contract
+types from `docs/openapi.yaml`, and CSS Modules. Backend-only and CommonJS rules
+below apply to backend code; the client uses browser ESM and separate dependencies.
+
 ## Core principles
 - Use TypeScript strictly: no implicit any, prefer explicit types, and keep types narrow and readable.
 - Keep code modular and backend-focused. Do not generate frontend, mobile, or unrelated scripts.
