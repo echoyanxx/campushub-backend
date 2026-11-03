@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
-import type { Reservation, Resource } from '../api/types';
-import { useUserReservations } from '../hooks/useUserReservations';
+import type { Reservation, Resource } from '../../../shared/api';
+import { useReservations } from '../hooks/useReservations';
 import styles from './Reservation.module.css';
 
 interface UserReservationsProps {
@@ -19,7 +19,7 @@ const ReservationList = ({
   refreshKey,
 }: UserReservationsProps): ReactElement => {
   const { reservations, loading, loadError, actionError, success, cancellingId, refresh, cancel } =
-    useUserReservations(userId, refreshKey);
+    useReservations(userId, refreshKey);
   const resourceName = (resourceId: string): string =>
     resources.find((resource: Resource): boolean => resource.id === resourceId)?.name ??
     `Resource ${resourceId}`;

@@ -1,10 +1,9 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
-
-export type ResourceTypeValue = 'ROOM' | 'EQUIPMENT' | 'LAB';
+import type { ResourceType } from '../../shared/api';
 
 export interface IResource extends Document {
   name: string;
-  type: ResourceTypeValue;
+  type: ResourceType;
   location: string;
   isAvailable: boolean;
   reservationVersion: number;

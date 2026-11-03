@@ -1,4 +1,4 @@
-import type { Reservation } from '../api/types.ts';
+import type { Reservation } from '../../../shared/api';
 
 export const activeReservationsForUser = (
   reservations: Reservation[],

@@ -1,5 +1,5 @@
 import type { ChangeEvent, ReactElement, SubmitEvent } from 'react';
-import type { Reservation, Resource } from '../api/types';
+import type { Reservation, Resource } from '../../../shared/api';
 import { useBooking } from '../hooks/useBooking';
 import styles from './Reservation.module.css';
 

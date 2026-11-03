@@ -3,7 +3,10 @@ import { ServiceError } from '../errors/service-error';
 import Reservation, { IReservation } from '../models/Reservation.model';
 import Resource from '../models/Resource.model';
 import User from '../models/User';
-import { CreateReservationRequest, Reservation as ReservationResponse } from '../types/reservation';
+import type {
+  CreateReservationRequest,
+  Reservation as ReservationResponse,
+} from '../../shared/api';
 
 const toReservationResponse = (
   reservation: HydratedDocument<IReservation>,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import type { Resource, ResourceType } from '../api/types';
+import type { Resource, ResourceType } from '../../../shared/api';
 import { ResourceCard } from './ResourceCard';
 import styles from './ResourceList.module.css';
 import shared from './Reservation.module.css';

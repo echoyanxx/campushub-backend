@@ -8,7 +8,7 @@ import { app } from '../src/app';
 import Reservation from '../src/models/Reservation.model';
 import Resource from '../src/models/Resource.model';
 import User from '../src/models/User';
-import { CreateReservationRequest, ReservationStatus } from '../src/types/reservation';
+import type { CreateReservationRequest, ReservationStatus } from '../shared/api';
 
 interface HttpResult {
   status: number;

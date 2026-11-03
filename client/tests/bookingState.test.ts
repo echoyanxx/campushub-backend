@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { Reservation, Resource } from '../src/api/types.ts';
+import type { Reservation, Resource } from '../../shared/api';
 import { validateBooking, isStudentId } from '../src/utils/bookingValidation.ts';
 import { activeReservationsForUser } from '../src/utils/reservations.ts';
 

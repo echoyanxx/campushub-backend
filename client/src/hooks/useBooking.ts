@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, createReservation } from '../api/campushubApi';
-import type { Reservation, Resource } from '../api/types';
+import type { Reservation, Resource } from '../../../shared/api';
 import { validateBooking } from '../utils/bookingValidation';
 import type { BookingErrors, BookingValues } from '../utils/bookingValidation';
+import { getErrorMessage } from '../utils/errorMessage.ts';
 
 interface UseBookingOptions {
   resource: Resource | null;
@@ -67,9 +68,7 @@ export const useBooking = ({ resource, userId, onBooked }: UseBookingOptions): B
       setError(
         failure instanceof ApiError && failure.status === 409
           ? 'This resource is already booked for that time. Choose a different time and try again.'
-          : failure instanceof Error
-            ? failure.message
-            : 'Unable to create the booking. Please try again.',
+          : getErrorMessage(failure, 'Unable to create the booking. Please try again.'),
       );
     } finally {
       pending.current = false;

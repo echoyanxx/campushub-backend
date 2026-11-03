@@ -8,13 +8,13 @@ import {
   fetchResources,
   fetchUserReservations,
 } from '../src/api/campushubApi.ts';
-import type { CreateReservationDTO, Reservation, Resource } from '../src/api/types.ts';
+import type { CreateReservationRequest, Reservation, Resource } from '../../shared/api';
 
 const originalFetch = globalThis.fetch;
 const userId = '507f1f77bcf86cd799439011';
 const resourceId = '507f1f77bcf86cd799439012';
 const reservationId = '507f1f77bcf86cd799439013';
-const payload: CreateReservationDTO = {
+const payload: CreateReservationRequest = {
   resourceId,
   userId,
   startTime: '2026-11-02T10:00:00Z',

@@ -15,6 +15,26 @@ separate React/TypeScript/Vite client.
 | OpenAPI contract                                  | [docs/openapi.yaml](docs/openapi.yaml)                             |
 | Full-stack error audit and screenshot             | [Lab 5 audit](docs/lab5-state-audit.md)                            |
 
+## Lab 6 context optimization
+
+| Submission deliverable | Location |
+| --- | --- |
+| Cursor context and ignore rules | [.cursorrules](.cursorrules), [.cursorignore](.cursorignore) |
+| Centralized Express error middleware | [errorHandler.ts](src/middleware/errorHandler.ts) |
+| Reservation loading and cancellation hook | [useReservations.ts](client/src/hooks/useReservations.ts) |
+| Shared full-stack API declarations | [api.d.ts](shared/api.d.ts) |
+
+React hooks live under `client/src/hooks/`, within the separate frontend application.
+
+See the [Part 1 audit and verification](docs/lab6-context-optimization.md) for the
+shared agent rules, ignore patterns, context-size comparison, and source-only query.
+
+See the [Part 2 bloat and redundancy audit](docs/lab6-bloat-audit.md) for controller
+duplication, component sizes, DTO drift, and prioritized refactoring candidates.
+
+See the [Part 3 refactoring and validation](docs/lab6-refactoring.md) for centralized
+error handling, reservation hooks, shared declarations, and regression results.
+
 ## Run locally
 
 Use Node.js 22.18+ and a MongoDB replica set or sharded cluster for reservation

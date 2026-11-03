@@ -1,13 +1,9 @@
-import type { CreateReservationDTO, ErrorResponse, Reservation, Resource } from './types.ts';
-
-export type {
-  CreateReservationDTO,
+import type {
+  CreateReservationRequest,
   ErrorResponse,
   Reservation,
   Resource,
-  ResourceType,
-  ReservationStatus,
-} from './types.ts';
+} from '../../../shared/api';
 
 const baseUrl = (import.meta.env?.VITE_API_BASE_URL?.trim() || '/api/v1').replace(/\/+$/, '');
 const identifierPattern = /^[a-fA-F0-9]{24}$/;
@@ -149,7 +145,9 @@ export const fetchResources = async (type?: string, signal?: AbortSignal): Promi
   );
 };
 
-export const createReservation = async (payload: CreateReservationDTO): Promise<Reservation> => {
+export const createReservation = async (
+  payload: CreateReservationRequest,
+): Promise<Reservation> => {
   validateIdentifier(payload.resourceId, 'Resource ID');
   validateIdentifier(payload.userId, 'User ID');
   if (!isTimestamp(payload.startTime) || !isTimestamp(payload.endTime)) {

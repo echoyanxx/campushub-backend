@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchResources } from '../api/campushubApi';
-import type { Resource, ResourceType } from '../api/types';
+import type { Resource, ResourceType } from '../../../shared/api';
+import { getErrorMessage } from '../utils/errorMessage.ts';
 
 interface ResourceState {
   resources: Resource[];
@@ -23,7 +24,7 @@ export const useResources = (type: ResourceType | undefined, refreshKey: number)
           setState({
             resources: [],
             loading: false,
-            error: error instanceof Error ? error.message : 'Unable to load campus resources.',
+            error: getErrorMessage(error, 'Unable to load campus resources.'),
           });
         }
       }

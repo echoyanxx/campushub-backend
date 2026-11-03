@@ -1,13 +1,12 @@
 import mongoose, { Document, Model, Schema, Types } from 'mongoose';
-
-export type ReservationStatusValue = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+import type { ReservationStatus } from '../../shared/api';
 
 export interface IReservation extends Document {
   resourceId: Types.ObjectId;
   userId: Types.ObjectId;
   startTime: Date;
   endTime: Date;
-  status: ReservationStatusValue;
+  status: ReservationStatus;
 }
 
 const reservationSchema = new Schema<IReservation>(

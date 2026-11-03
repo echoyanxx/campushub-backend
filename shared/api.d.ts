@@ -1,4 +1,4 @@
-// Contract source: docs/openapi.yaml (API v1.1.0).
+// Wire contract: docs/openapi.yaml. Type declarations only; no runtime dependencies.
 export type ResourceType = 'ROOM' | 'EQUIPMENT' | 'LAB';
 export type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 
@@ -10,14 +10,14 @@ export interface Resource {
   location: string;
 }
 
-export interface CreateReservationDTO {
+export interface CreateReservationRequest {
   resourceId: string;
   userId: string;
   startTime: string;
   endTime: string;
 }
 
-export interface Reservation extends CreateReservationDTO {
+export interface Reservation extends CreateReservationRequest {
   id: string;
   status: ReservationStatus;
 }
@@ -25,4 +25,9 @@ export interface Reservation extends CreateReservationDTO {
 export interface ErrorResponse {
   code: string;
   message: string;
+}
+
+export interface ResourceQuery {
+  type?: ResourceType;
+  isAvailable?: boolean;
 }

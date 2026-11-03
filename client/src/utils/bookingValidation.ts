@@ -1,4 +1,4 @@
-import type { CreateReservationDTO, Resource } from '../api/types.ts';
+import type { CreateReservationRequest, Resource } from '../../../shared/api';
 
 export interface BookingValues {
   startTime: string;
@@ -13,7 +13,7 @@ export interface BookingErrors {
 }
 
 export type BookingValidationResult =
-  { valid: true; payload: CreateReservationDTO } | { valid: false; errors: BookingErrors };
+  { valid: true; payload: CreateReservationRequest } | { valid: false; errors: BookingErrors };
 
 export const isStudentId = (value: string): boolean => /^[a-fA-F0-9]{24}$/.test(value);
 

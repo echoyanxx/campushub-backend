@@ -1,0 +1,3 @@
+Read AGENTS.md for the shared CampusHub architecture, scope, safety, and validation rules.
+Honor .cursorignore; start backend queries in src/ and expand only as the task requires.
+Do not load historical logs, generated output, or bundle maps into routine context.

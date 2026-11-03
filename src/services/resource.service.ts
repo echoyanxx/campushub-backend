@@ -1,6 +1,6 @@
 import { HydratedDocument } from 'mongoose';
 import Resource, { IResource } from '../models/Resource.model';
-import { Resource as ResourceResponse, ResourceQuery } from '../types/reservation';
+import type { Resource as ResourceResponse, ResourceQuery } from '../../shared/api';
 
 export const listResources = async (filters: ResourceQuery): Promise<ResourceResponse[]> => {
   const resources = await Resource.find(filters).sort({ name: 1 }).exec();

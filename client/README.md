@@ -35,17 +35,18 @@ in the backend contract. This API does not provide login or user creation.
 
 ## API contract
 
-`../docs/openapi.yaml` is the source for the manually generated interfaces in
-`src/api/types.ts` and the methods in `src/api/campushubApi.ts`:
+`../docs/openapi.yaml` defines the wire contract. Both applications import the
+declaration-only interfaces in `../shared/api.d.ts`; HTTP methods stay in
+`src/api/campushubApi.ts`:
 
-| Method                                             | HTTP request                                 | Result          |
-| -------------------------------------------------- | -------------------------------------------- | --------------- |
-| `fetchResources(type?: string)`                    | `GET /resources?type=ROOM` (filter optional) | `Resource[]`    |
-| `createReservation(payload: CreateReservationDTO)` | `POST /reservations`                         | `Reservation`   |
-| `fetchUserReservations(userId: string)`            | `GET /reservations/user/{userId}`            | `Reservation[]` |
-| `cancelReservation(reservationId: string)`         | `PATCH /reservations/{id}/cancel` (no body)  | `Reservation`   |
+| Method                                                 | HTTP request                                 | Result          |
+| ------------------------------------------------------ | -------------------------------------------- | --------------- |
+| `fetchResources(type?: string)`                        | `GET /resources?type=ROOM` (filter optional) | `Resource[]`    |
+| `createReservation(payload: CreateReservationRequest)` | `POST /reservations`                         | `Reservation`   |
+| `fetchUserReservations(userId: string)`                | `GET /reservations/user/{userId}`            | `Reservation[]` |
+| `cancelReservation(reservationId: string)`             | `PATCH /reservations/{id}/cancel` (no body)  | `Reservation`   |
 
-`CreateReservationDTO` maps to the contract's `CreateReservationRequest`. Resource
+`CreateReservationRequest` matches the OpenAPI request schema. Resource
 fields are `type` and `isAvailable`. Reservation statuses are `PENDING`,
 `CONFIRMED`, and `CANCELLED`; timestamps are ISO strings with a timezone. Convert
 local form input with `new Date(value).toISOString()` before submitting.
@@ -56,6 +57,11 @@ response errors. It exposes `status`, `code`, and `message`; a conflict preserve
 an actionable banner. Aborted resource requests retain `AbortError` for effect
 cleanup. `fetchResources` and `fetchUserReservations` accept an optional second
 `AbortSignal` argument.
+
+`useBooking` owns booking form validation, submission, and feedback.
+`useReservations` owns reservation loading, refresh, cancellation, and feedback.
+Components consume these hooks and retain keyed state resets when the current
+student or selected resource changes.
 
 Requests have a 15-second deadline covering headers and JSON body reads. Expiry
 returns `ApiError` with code `REQUEST_TIMEOUT`, allowing each hook to clear its

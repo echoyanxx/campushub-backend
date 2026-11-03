@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { cancelReservation, fetchUserReservations } from '../api/campushubApi';
-import type { Reservation } from '../api/types';
+import type { Reservation } from '../../../shared/api';
 import { activeReservationsForUser } from '../utils/reservations';
+import { getErrorMessage } from '../utils/errorMessage.ts';
 
 interface ReservationState {
   reservations: Reservation[];
@@ -14,10 +15,7 @@ interface ReservationState {
   cancel: (reservationId: string) => Promise<void>;
 }
 
-export const useUserReservations = (
-  userId: string | null,
-  refreshKey: number,
-): ReservationState => {
+export const useReservations = (userId: string | null, refreshKey: number): ReservationState => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -46,9 +44,7 @@ export const useUserReservations = (
         if (!controller.signal.aborted) setReservations(activeReservationsForUser(result, userId));
       } catch (failure: unknown) {
         if (!controller.signal.aborted)
-          setLoadError(
-            failure instanceof Error ? failure.message : 'Unable to load your bookings.',
-          );
+          setLoadError(getErrorMessage(failure, 'Unable to load your bookings.'));
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -83,9 +79,7 @@ export const useUserReservations = (
     } catch (failure: unknown) {
       if (mounted.current)
         setActionError(
-          failure instanceof Error
-            ? failure.message
-            : 'Unable to cancel the reservation. Please try again.',
+          getErrorMessage(failure, 'Unable to cancel the reservation. Please try again.'),
         );
     } finally {
       pending.current = false;

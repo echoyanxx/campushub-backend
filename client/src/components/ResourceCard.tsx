@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import type { Resource, ResourceType } from '../api/types';
+import type { Resource, ResourceType } from '../../../shared/api';
 import styles from './ResourceCard.module.css';
 
 interface ResourceCardProps {

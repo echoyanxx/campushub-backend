@@ -1,0 +1,35 @@
+# Git internals, dependencies, builds, coverage, and caches at any depth.
+**/.git/
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/.vite/
+**/.cache/
+**/*.tsbuildinfo
+
+# Dependency lockfiles; package manifests remain available.
+**/package-lock.json
+**/npm-shrinkwrap.json
+**/yarn.lock
+**/pnpm-lock.yaml
+**/bun.lock
+**/bun.lockb
+
+# Runtime/historical logs and generated bundle maps.
+**/logs/
+**/history/
+**/transcripts/
+**/*.log
+**/*.log.*
+**/*.map
+docs/lab*-steering-log.md
+
+# Generated API clients/docs/builds; keep authored OpenAPI YAML accessible.
+**/generated/
+**/api-docs/
+
+# Local credentials; retain configuration templates.
+**/.env
+**/.env.*
+!**/.env.example

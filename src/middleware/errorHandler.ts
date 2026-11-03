@@ -1,7 +1,7 @@
 import { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { ServiceError, ServiceErrorCode } from '../errors/service-error';
-import { ErrorResponse } from '../types/reservation';
+import type { ErrorResponse } from '../../shared/api';
 
 const serviceErrorStatuses: Record<ServiceErrorCode, number> = {
   INVALID_TIME_RANGE: 400,
@@ -11,7 +11,7 @@ const serviceErrorStatuses: Record<ServiceErrorCode, number> = {
   DOUBLE_BOOKING: 409,
 };
 
-export const handleError: ErrorRequestHandler = (
+export const errorHandler: ErrorRequestHandler = (
   error: unknown,
   _req: Request,
   res: Response<ErrorResponse>,

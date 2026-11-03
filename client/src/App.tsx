@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ChangeEvent, ReactElement, SubmitEvent } from 'react';
-import type { Reservation, Resource } from './api/types';
+import type { Reservation, Resource } from '../../shared/api';
 import { BookingForm } from './components/BookingForm';
 import { ResourceList } from './components/ResourceList';
 import { UserReservations } from './components/UserReservations';
