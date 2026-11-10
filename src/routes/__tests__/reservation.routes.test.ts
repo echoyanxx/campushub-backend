@@ -1,14 +1,11 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
-import { Server } from 'node:http';
-import { AddressInfo } from 'node:net';
-import { after, before, beforeEach, describe, it, TestContext } from 'node:test';
-import mongoose, { Types } from 'mongoose';
-import { app } from '../src/app';
-import Reservation from '../src/models/Reservation.model';
-import Resource from '../src/models/Resource.model';
-import User from '../src/models/User';
-import type { CreateReservationRequest, ReservationStatus } from '../shared/api';
+import { Types } from 'mongoose';
+import supertest from 'supertest';
+import { app } from '../../app';
+import Reservation from '../../models/Reservation.model';
+import Resource from '../../models/Resource.model';
+import User from '../../models/User';
+import type { CreateReservationRequest, ReservationStatus } from '../../../shared/api';
 
 interface HttpResult {
   status: number;
@@ -22,8 +19,6 @@ const otherRoomId = new Types.ObjectId();
 const equipmentId = new Types.ObjectId();
 const labId = new Types.ObjectId();
 const missingId = new Types.ObjectId().toString();
-let server: Server | undefined;
-let baseUrl: string;
 
 const asObject = (value: unknown): Record<string, unknown> => {
   assert.ok(value !== null && typeof value === 'object' && !Array.isArray(value));
@@ -37,16 +32,18 @@ const asList = (value: unknown): Record<string, unknown>[] => {
 
 const request = async (
   path: string,
-  method: string = 'GET',
+  method: 'GET' | 'POST' | 'PATCH' = 'GET',
   body?: unknown,
 ): Promise<HttpResult> => {
-  const response = await fetch(`${baseUrl}${path}`, {
-    method,
-    ...(body === undefined
-      ? {}
-      : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
-  });
-  const result: unknown = await response.json();
+  const client = supertest(app);
+  const url = `/api/v1${path}`;
+  const pendingRequest =
+    method === 'POST' ? client.post(url) : method === 'PATCH' ? client.patch(url) : client.get(url);
+  if (body !== undefined) {
+    pendingRequest.set('Content-Type', 'application/json').send(JSON.stringify(body));
+  }
+  const response = await pendingRequest;
+  const result: unknown = response.body;
   return { status: response.status, body: result };
 };
 
@@ -72,24 +69,7 @@ const seedBooking = async (
   return booking._id.toString();
 };
 
-before(async (): Promise<void> => {
-  const uri = process.env.MONGODB_TEST_URI ?? 'mongodb://127.0.0.1:27017/?replicaSet=rs0';
-  await mongoose.connect(uri, {
-    dbName: `campushub_test_${randomUUID().replace(/-/g, '')}`,
-    serverSelectionTimeoutMS: 5000,
-  });
-  await Promise.all([Resource.init(), User.init(), Reservation.init()]);
-  server = app.listen(0, '127.0.0.1');
-  await new Promise<void>((resolve, reject): void => {
-    server?.once('listening', resolve);
-    server?.once('error', reject);
-  });
-  const address = server.address() as AddressInfo;
-  baseUrl = `http://127.0.0.1:${address.port}/api/v1`;
-});
-
 beforeEach(async (): Promise<void> => {
-  await Promise.all([Resource.deleteMany({}), User.deleteMany({}), Reservation.deleteMany({})]);
   await Resource.insertMany([
     { _id: roomId, name: 'A Room', type: 'ROOM', isAvailable: true, location: 'Library' },
     { _id: otherRoomId, name: 'B Room', type: 'ROOM', isAvailable: false, location: 'Library' },
@@ -102,26 +82,9 @@ beforeEach(async (): Promise<void> => {
   ]);
 });
 
-after(async (): Promise<void> => {
-  try {
-    if (server) {
-      const activeServer = server;
-      await new Promise<void>((resolve, reject): void => {
-        activeServer.close((error?: Error): void => (error ? reject(error) : resolve()));
-      });
-    }
-    if (mongoose.connection.readyState === 1) {
-      // Only the randomly named test database created above is dropped.
-      await mongoose.connection.dropDatabase();
-    }
-  } finally {
-    await mongoose.disconnect();
-  }
-});
-
 describe('resource retrieval and existing health endpoint', (): void => {
-  it('returns a structured 500 without exposing internal errors', async (context: TestContext): Promise<void> => {
-    context.mock.method(Resource, 'find', (): never => {
+  it('returns a structured 500 without exposing internal errors', async (): Promise<void> => {
+    jest.spyOn(Resource, 'find').mockImplementation((): never => {
       throw new Error('Internal database failure details');
     });
 
@@ -164,6 +127,7 @@ describe('resource retrieval and existing health endpoint', (): void => {
     ['isAvailable=false', ['B Room', 'D Lab']],
     ['type=ROOM&isAvailable=false', ['B Room']],
     ['type=LAB&isAvailable=true', []],
+    ['type=%20ROOM%20&isAvailable=true', ['A Room']],
   ] as const) {
     it(`filters resources using ${query}`, async (): Promise<void> => {
       const result = await request(`/resources?${query}`);
@@ -182,6 +146,7 @@ describe('resource retrieval and existing health endpoint', (): void => {
     'isAvailable=',
     'type=ROOM&type=LAB',
     'isAvailable=true&isAvailable=false',
+    'unknown=value',
   ]) {
     it(`rejects invalid filters: ${query}`, async (): Promise<void> => {
       const result = await request(`/resources?${query}`);
@@ -192,6 +157,41 @@ describe('resource retrieval and existing health endpoint', (): void => {
 });
 
 describe('reservation creation', (): void => {
+  it('creates, lists, rejects a conflict, cancels, and rebooks through HTTP', async (): Promise<void> => {
+    const created = await request('/reservations', 'POST', input());
+    assert.equal(created.status, 201);
+    const booking = asObject(created.body);
+    assert.equal(typeof booking.id, 'string');
+
+    const history = await request(`/reservations/user/${studentId}`);
+    assert.equal(history.status, 200);
+    assert.deepEqual(history.body, [booking]);
+
+    const conflict = await request('/reservations', 'POST', input());
+    assert.equal(conflict.status, 409);
+    assert.deepEqual(conflict.body, {
+      code: 'DOUBLE_BOOKING',
+      message: 'Resource is already reserved for this time slot.',
+    });
+    assert.equal(await Reservation.countDocuments(), 1);
+
+    const cancelled = await request(`/reservations/${booking.id}/cancel`, 'PATCH');
+    assert.equal(cancelled.status, 200);
+    assert.deepEqual(cancelled.body, { ...booking, status: 'CANCELLED' });
+
+    const replacement = await request('/reservations', 'POST', input());
+    assert.equal(replacement.status, 201);
+    assert.notEqual(asObject(replacement.body).id, booking.id);
+    const finalHistory = await request(`/reservations/user/${studentId}`);
+    assert.equal(finalHistory.status, 200);
+    assert.deepEqual(
+      asList(finalHistory.body)
+        .map((item: Record<string, unknown>): unknown => item.status)
+        .sort(),
+      ['CANCELLED', 'PENDING'],
+    );
+  });
+
   it('creates a pending reservation with stable public fields', async (): Promise<void> => {
     const result = await request('/reservations', 'POST', input());
     assert.equal(result.status, 201);
@@ -218,6 +218,8 @@ describe('reservation creation', (): void => {
       ['2026-11-02T10:15:00Z', '2026-11-02T10:45:00Z'],
       ['2026-11-02T09:00:00Z', '2026-11-02T12:00:00Z'],
       ['2026-11-02T10:00:00Z', '2026-11-02T11:00:00Z'],
+      ['2026-11-02T09:00:00Z', '2026-11-02T10:00:00.001Z'],
+      ['2026-11-02T10:59:59.999Z', '2026-11-02T12:00:00Z'],
     ]) {
       it(`rejects overlap ${startTime}–${endTime} with ${status}`, async (): Promise<void> => {
         await seedBooking(status, otherStudentId);
@@ -232,6 +234,8 @@ describe('reservation creation', (): void => {
   for (const [startTime, endTime] of [
     ['2026-11-02T09:00:00Z', '2026-11-02T10:00:00Z'],
     ['2026-11-02T11:00:00Z', '2026-11-02T12:00:00Z'],
+    ['2026-11-02T09:59:59.999Z', '2026-11-02T10:00:00Z'],
+    ['2026-11-02T11:00:00Z', '2026-11-02T11:00:00.001Z'],
   ]) {
     it(`allows an adjacent booking ${startTime}–${endTime}`, async (): Promise<void> => {
       await seedBooking();
@@ -294,6 +298,19 @@ describe('reservation creation', (): void => {
     { ...input(), status: 'CONFIRMED' },
     { ...input(), userId: 123 },
   ];
+
+  for (const field of ['resourceId', 'userId', 'startTime', 'endTime'] as const) {
+    it(`rejects a missing ${field} with a structured validation error`, async (): Promise<void> => {
+      const body: Partial<CreateReservationRequest> = input();
+      delete body[field];
+      const result = await request('/reservations', 'POST', body);
+      assert.equal(result.status, 400);
+      assert.equal(asObject(result.body).code, 'INVALID_REQUEST');
+      assert.equal(typeof asObject(result.body).message, 'string');
+      assert.equal(await Reservation.countDocuments(), 0);
+    });
+  }
+
   invalidBodies.forEach((body: unknown, index: number): void => {
     it(`rejects invalid payload ${index + 1} without inserting`, async (): Promise<void> => {
       const result = await request('/reservations', 'POST', body);
@@ -316,12 +333,11 @@ describe('reservation creation', (): void => {
   }
 
   it('returns structured errors for malformed JSON', async (): Promise<void> => {
-    const response = await fetch(`${baseUrl}/reservations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{',
-    });
-    const body: unknown = await response.json();
+    const response = await supertest(app)
+      .post('/api/v1/reservations')
+      .set('Content-Type', 'application/json')
+      .send('{');
+    const body: unknown = response.body;
     assert.equal(response.status, 400);
     assert.equal(asObject(body).code, 'INVALID_JSON');
   });

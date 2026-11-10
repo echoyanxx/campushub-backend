@@ -17,12 +17,12 @@ separate React/TypeScript/Vite client.
 
 ## Lab 6 context optimization
 
-| Submission deliverable | Location |
-| --- | --- |
-| Cursor context and ignore rules | [.cursorrules](.cursorrules), [.cursorignore](.cursorignore) |
-| Centralized Express error middleware | [errorHandler.ts](src/middleware/errorHandler.ts) |
-| Reservation loading and cancellation hook | [useReservations.ts](client/src/hooks/useReservations.ts) |
-| Shared full-stack API declarations | [api.d.ts](shared/api.d.ts) |
+| Submission deliverable                    | Location                                                     |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| Cursor context and ignore rules           | [.cursorrules](.cursorrules), [.cursorignore](.cursorignore) |
+| Centralized Express error middleware      | [errorHandler.ts](src/middleware/errorHandler.ts)            |
+| Reservation loading and cancellation hook | [useReservations.ts](client/src/hooks/useReservations.ts)    |
+| Shared full-stack API declarations        | [api.d.ts](shared/api.d.ts)                                  |
 
 React hooks live under `client/src/hooks/`, within the separate frontend application.
 
@@ -34,6 +34,30 @@ duplication, component sizes, DTO drift, and prioritized refactoring candidates.
 
 See the [Part 3 refactoring and validation](docs/lab6-refactoring.md) for centralized
 error handling, reservation hooks, shared declarations, and regression results.
+
+## Lab 7 testing deliverables
+
+| Submission deliverable                 | Location                                                                          |
+| -------------------------------------- | --------------------------------------------------------------------------------- |
+| Jest configuration                     | [jest.config.ts](jest.config.ts)                                                  |
+| Isolated in-memory MongoDB replica set | [src/test/setup.ts](src/test/setup.ts)                                            |
+| Reservation service tests              | [reservation.service.test.ts](src/services/__tests__/reservation.service.test.ts) |
+| Supertest HTTP integration tests       | [reservation.routes.test.ts](src/routes/__tests__/reservation.routes.test.ts)     |
+| Environment configuration tests        | [env.test.ts](src/config/__tests__/env.test.ts)                                   |
+| Coverage audit and reproduction steps  | [Lab 7 coverage report](docs/lab7-coverage.md)                                    |
+| Machine-readable coverage snapshot     | [Lab 7 coverage summary](docs/lab7-coverage-summary.json)                         |
+
+```sh
+npm ci
+npx jest --coverage
+```
+
+The test helper starts a one-member in-memory MongoDB replica set with transaction
+support. Each suite gets a unique database; records are cleared between tests,
+and the database and owned MongoDB process are removed at teardown. The first run
+may download the MongoDB binary and requires network access. Set
+`MONGODB_TEST_URI` only to use an existing replica set instead. No local `.env`
+configuration is required for the tests.
 
 ## Run locally
 
@@ -65,8 +89,9 @@ this lab does not include authentication or a data-seeding endpoint. See the
 
 Run `npm run typecheck`, `npm run build`, and `npm run lint` in both the repository
 root and `client/`. Run `npm test` in `client/` for the API and state regression
-tests. Backend `npm test` requires a replica set configured through
-`MONGODB_TEST_URI` and uses an isolated temporary database.
+tests. Backend `npm test` uses Jest and starts an isolated in-memory replica set
+automatically. Run `npx jest --coverage` for the backend coverage audit; both global
+statement and branch coverage must reach 80%.
 
 The Lab 5 audit records 20 passing client tests, 57 passing backend integration
 tests, and browser verification of a real `409 DOUBLE_BOOKING` response, form

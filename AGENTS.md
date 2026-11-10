@@ -61,8 +61,18 @@ Keep each layer in its dedicated files:
 - Skip dependency trees, lockfiles, builds, coverage, generated API output, historical
   logs, and bundle maps. Do not load past lab reports unless the task needs them.
 - Run relevant validation before claiming completion. Backend: `npm run typecheck`,
-  `npm run build`, `npm run lint`; reservation integration tests: `npm test` with a
-  replica set configured through `MONGODB_TEST_URI`.
+  `npm run build`, `npm run lint`; reservation integration tests: `npm test` (Jest
+  and Supertest). `src/test/setup.ts` starts an in-memory MongoDB replica set by
+  default; set `MONGODB_TEST_URI` to use an existing replica set instead. Each suite
+  uses a unique database, clears documents between tests, and drops only its own
+  database on teardown. Keep test helpers out of the production build.
+- Service tests live in `src/services/__tests__/` and call services directly using
+  the same isolated database setup. HTTP integration tests live in
+  `src/routes/__tests__/` and use Supertest. Jest discovers tests under `src/` and
+  `tests/`; production TypeScript compilation excludes `__tests__` directories.
+- Run `npx jest --coverage` for an audit of all production backend TypeScript,
+  including startup/configuration and excluding tests/helpers. Global statement
+  and branch coverage must each reach 80%.
 - For frontend changes, run typecheck, build, lint, and `npm test` from `client/`.
 - Keep commits/diffs focused. Summarize what changed, why, how these rules were
   respected, and validation results. Update this file when architecture evolves.
