@@ -27,6 +27,38 @@ const completionSchema = z.object({
     .min(1),
 });
 
+const providerErrorSchema = z.object({
+  error: z.object({
+    code: z.string().nullable().optional(),
+    type: z.string().nullable().optional(),
+  }),
+});
+
+const providerErrorCodeSchema = z.enum([
+  'insufficient_quota',
+  'credit_balance_exhausted',
+  'organization_spend_limit_exceeded',
+  'project_spend_limit_exceeded',
+  'organization_usage_limit_exceeded',
+  'rate_limit_exceeded',
+  'slow_down',
+]);
+type ProviderErrorCode = z.infer<typeof providerErrorCodeSchema>;
+
+const providerErrorHelp: Record<ProviderErrorCode, string> = {
+  insufficient_quota: 'API quota exhausted; check billing and usage limits before retrying.',
+  credit_balance_exhausted:
+    'API prepaid credit balance exhausted; check API billing before retrying.',
+  organization_spend_limit_exceeded:
+    'Organization API spend limit reached; check organization limits before retrying.',
+  project_spend_limit_exceeded:
+    'Project API spend limit reached; check project limits before retrying.',
+  organization_usage_limit_exceeded:
+    'Organization API usage limit reached; check approved usage limits before retrying.',
+  rate_limit_exceeded: 'API rate limit exceeded; wait before retrying or check model limits.',
+  slow_down: 'API request rate increased too quickly; wait before retrying.',
+};
+
 export interface FailureContext {
   rules: string;
   failureLog: string;
@@ -151,7 +183,20 @@ export const requestPatch = async (
     }),
   });
   if (!response.ok) {
-    // Do not print provider response bodies, which may contain request data.
+    // Only report recognized codes; provider messages may contain request data.
+    const errorResponse = providerErrorSchema.safeParse(
+      await response.json().catch((): null => null),
+    );
+    const code = providerErrorCodeSchema.safeParse(
+      errorResponse.success
+        ? errorResponse.data.error.code || errorResponse.data.error.type
+        : undefined,
+    );
+    if (code.success) {
+      throw new Error(
+        `OpenAI request failed (HTTP ${response.status}; ${code.data}). ${providerErrorHelp[code.data]}`,
+      );
+    }
     throw new Error(
       `OpenAI request failed (HTTP ${response.status}). Check the key, model access, and API quota.`,
     );

@@ -208,6 +208,54 @@ describe('auto-heal model responses', (): void => {
   });
 
   it.each([
+    ['insufficient_quota', 'API quota exhausted'],
+    ['credit_balance_exhausted', 'API prepaid credit balance exhausted'],
+    ['organization_spend_limit_exceeded', 'Organization API spend limit reached'],
+    ['project_spend_limit_exceeded', 'Project API spend limit reached'],
+    ['organization_usage_limit_exceeded', 'Organization API usage limit reached'],
+    ['rate_limit_exceeded', 'API rate limit exceeded'],
+    ['slow_down', 'API request rate increased too quickly'],
+  ])('distinguishes provider error %s', async (code: string, expected: string): Promise<void> => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { code, message: 'sensitive provider payload' },
+        }),
+        { status: 429 },
+      ),
+    );
+    await expect(requestPatch('test-key', 'gpt-4.1', context)).rejects.toThrow(expected);
+  });
+
+  it('recognizes a quota error type when its code is absent', async (): Promise<void> => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { code: null, type: 'insufficient_quota', message: 'sensitive provider payload' },
+        }),
+        { status: 429 },
+      ),
+    );
+    await expect(requestPatch('test-key', 'gpt-4.1', context)).rejects.toThrow(
+      'insufficient_quota',
+    );
+  });
+
+  it('does not log arbitrary provider error codes', async (): Promise<void> => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { code: 'sensitive provider payload', message: 'sensitive provider payload' },
+        }),
+        { status: 429 },
+      ),
+    );
+    await expect(requestPatch('test-key', 'gpt-4.1', context)).rejects.toThrow(
+      'OpenAI request failed (HTTP 429). Check the key, model access, and API quota.',
+    );
+  });
+
+  it.each([
     { finish_reason: 'length', message: { content: JSON.stringify(patch) } },
     { finish_reason: 'stop', message: { content: null } },
     { finish_reason: 'stop', message: { content: '{"summary":"missing edits"}' } },
