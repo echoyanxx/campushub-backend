@@ -208,6 +208,35 @@ describe('auto-heal model responses', (): void => {
   });
 
   it.each([
+    ['insufficient_quota', 'API quota exhausted'],
+    ['rate_limit_exceeded', 'API rate limit exceeded'],
+  ])('distinguishes provider error %s', async (code: string, expected: string): Promise<void> => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { code, message: 'sensitive provider payload' },
+        }),
+        { status: 429 },
+      ),
+    );
+    await expect(requestPatch('test-key', 'gpt-4.1', context)).rejects.toThrow(expected);
+  });
+
+  it('does not log arbitrary provider error codes', async (): Promise<void> => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { code: 'sensitive provider payload', message: 'sensitive provider payload' },
+        }),
+        { status: 429 },
+      ),
+    );
+    await expect(requestPatch('test-key', 'gpt-4.1', context)).rejects.toThrow(
+      'OpenAI request failed (HTTP 429). Check the key, model access, and API quota.',
+    );
+  });
+
+  it.each([
     { finish_reason: 'length', message: { content: JSON.stringify(patch) } },
     { finish_reason: 'stop', message: { content: null } },
     { finish_reason: 'stop', message: { content: '{"summary":"missing edits"}' } },

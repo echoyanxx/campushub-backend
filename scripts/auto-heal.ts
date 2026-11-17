@@ -27,6 +27,10 @@ const completionSchema = z.object({
     .min(1),
 });
 
+const providerErrorSchema = z.object({
+  error: z.object({ code: z.string().nullable().optional() }),
+});
+
 export interface FailureContext {
   rules: string;
   failureLog: string;
@@ -151,7 +155,21 @@ export const requestPatch = async (
     }),
   });
   if (!response.ok) {
-    // Do not print provider response bodies, which may contain request data.
+    // Only report recognized codes; provider messages may contain request data.
+    const errorResponse = providerErrorSchema.safeParse(
+      await response.json().catch((): null => null),
+    );
+    const code = errorResponse.success ? errorResponse.data.error.code : undefined;
+    if (code === 'insufficient_quota') {
+      throw new Error(
+        `OpenAI request failed (HTTP ${response.status}; insufficient_quota). API quota exhausted; check the API project's billing and usage limits before retrying.`,
+      );
+    }
+    if (code === 'rate_limit_exceeded') {
+      throw new Error(
+        `OpenAI request failed (HTTP ${response.status}; rate_limit_exceeded). API rate limit exceeded; wait before retrying or check the project's model limits.`,
+      );
+    }
     throw new Error(
       `OpenAI request failed (HTTP ${response.status}). Check the key, model access, and API quota.`,
     );
