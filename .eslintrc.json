@@ -6,8 +6,7 @@
   },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": ["./tsconfig.json", "./tests/tsconfig.json"],
-    "tsconfigRootDir": "/Users/echoyan/NEU/CS5500/campushub-backend"
+    "project": ["./tsconfig.json", "./tests/tsconfig.json"]
   },
   "plugins": ["@typescript-eslint"],
   "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
