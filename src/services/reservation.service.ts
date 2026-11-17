@@ -63,7 +63,7 @@ export const createReservation = async (
         .session(session)
         .exec();
 
-      if (conflict) {
+      if (!conflict) {
         throw new ServiceError(
           'DOUBLE_BOOKING',
           'Resource is already reserved for this time slot.',
