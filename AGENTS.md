@@ -76,3 +76,16 @@ Keep each layer in its dedicated files:
 - For frontend changes, run typecheck, build, lint, and `npm test` from `client/`.
 - Keep commits/diffs focused. Summarize what changed, why, how these rules were
   respected, and validation results. Update this file when architecture evolves.
+
+## CI auto-healing
+
+- CI orchestration lives in `.github/workflows/ci.yml`; the typed AI patch runner
+  lives in `scripts/auto-heal.ts` with its own `scripts/tsconfig.json`. Keep scripts
+  outside the backend production build. Runner regression tests live in `tests/`.
+- Start repairs only for a failed Jest step. Preserve the failed CI result and
+  logs. Restrict generated edits to tracked production TypeScript under `src/`,
+  excluding tests/helpers; never let the agent edit workflows or dependencies.
+- Re-run lint, typecheck, build, and all Jest tests with coverage before opening
+  a patch PR. Never auto-merge. Skip fork PRs and recursive auto-heal branches.
+- Configure API credentials as Actions secrets, scoped to the model step. See
+  `docs/auto-healing-ci.md` for setup and review instructions.

@@ -8,7 +8,8 @@
     "dev": "ts-node src/server.ts",
     "build": "tsc --project tsconfig.json",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit && tsc --project tests/tsconfig.json",
+    "typecheck": "tsc --noEmit && tsc --project tests/tsconfig.json && tsc --project scripts/tsconfig.json",
+    "auto-heal": "ts-node --project scripts/tsconfig.json scripts/auto-heal.ts",
     "lint": "eslint . --ext .ts --max-warnings 0",
     "format": "prettier --write ."
   },

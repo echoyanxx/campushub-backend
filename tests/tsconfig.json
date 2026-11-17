@@ -5,6 +5,12 @@
     "noEmit": true,
     "types": ["node", "jest"]
   },
-  "include": ["../src/**/*.ts", "../shared/**/*.d.ts", "../jest.config.ts", "./**/*.ts"],
+  "include": [
+    "../src/**/*.ts",
+    "../shared/**/*.d.ts",
+    "../scripts/**/*.ts",
+    "../jest.config.ts",
+    "./**/*.ts"
+  ],
   "exclude": ["../node_modules", "../dist"]
 }

@@ -14,6 +14,8 @@ jobs:
     name: Backend checks
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      test-outcome: ${{ steps.tests.outcome }}
 
     steps:
       - name: Check out repository
@@ -38,4 +40,108 @@ jobs:
         run: npm run build
 
       - name: Run Jest with coverage
-        run: npm test -- --coverage
+        id: tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test -- --coverage 2>&1 | tee test-results.log
+
+      - name: Preserve Jest failure output
+        if: ${{ failure() && steps.tests.outcome == 'failure' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: jest-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results.log
+          if-no-files-found: error
+          retention-days: 7
+
+  auto-fix:
+    name: Propose a verified source fix
+    needs: backend
+    if: >-
+      ${{ failure() && needs.backend.outputs.test-outcome == 'failure' &&
+          (github.event_name == 'push' ||
+           github.event.pull_request.head.repo.full_name == github.repository) &&
+          !startsWith(github.head_ref, 'fix/auto-heal-') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      PATCH_BRANCH: fix/auto-heal-${{ github.run_id }}-${{ github.run_attempt }}
+      PR_BASE: ${{ github.head_ref || github.ref_name }}
+
+    steps:
+      - name: Check out the exact failing revision
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download Jest failure output
+        uses: actions/download-artifact@v8
+        with:
+          name: jest-failure-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Keep the PR merge revision for context, but apply edits on its head branch.
+      - name: Prepare patch branch
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [[ -n "$DIFF_BASE" && ! "$DIFF_BASE" =~ ^0+$ ]]; then
+            git diff "$DIFF_BASE" HEAD -- src/ shared/ > "$RUNNER_TEMP/failing.diff"
+          else
+            git show --format= HEAD -- src/ shared/ > "$RUNNER_TEMP/failing.diff"
+          fi
+          git switch --create "$PATCH_BRANCH" "$SOURCE_SHA"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate and apply a restricted source patch
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.AUTO_HEAL_MODEL || 'gpt-4.1' }}
+        run: >-
+          npm run auto-heal -- test-results.log
+          "$RUNNER_TEMP/failing.diff" "$RUNNER_TEMP/auto-heal-summary.md"
+
+      # Verification runs without the model key or persisted Git credentials.
+      - name: Verify the patch
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run build
+          npm test -- --coverage
+          git diff --check
+
+      - name: Commit patch and open a review PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FAILED_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src/
+          git diff --cached --quiet && { echo 'No source patch to publish'; exit 1; }
+          git commit -m 'fix: repair failing Jest tests'
+          gh auth setup-git
+          git push origin "$PATCH_BRANCH"
+          {
+            printf 'Fix proposed for failing CI: %s\n\n' "$FAILED_RUN_URL"
+            cat "$RUNNER_TEMP/auto-heal-summary.md"
+            printf '\n\nValidation passed: lint, typecheck, build, and all Jest tests with coverage.\n'
+            printf '\nHuman review is required before merging.\n'
+          } > "$RUNNER_TEMP/auto-heal-pr.md"
+          gh pr create --base "$PR_BASE" --head "$PATCH_BRANCH" \
+            --title 'fix: auto-heal failing Jest tests' \
+            --body-file "$RUNNER_TEMP/auto-heal-pr.md"
