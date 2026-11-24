@@ -97,6 +97,23 @@ serve production `/api/v1` through the same origin's reverse proxy, or configure
 configuration belongs in `VITE_` variables. `npm run preview` serves the bundle
 for inspection and does not provide the development API proxy.
 
+## Playwright E2E tests
+
+Install the root and client dependencies, then from `client/` run:
+
+```sh
+npx playwright install chromium firefox webkit
+npx playwright test
+```
+
+Playwright starts Vite at `http://127.0.0.1:5173` and Express at
+`http://127.0.0.1:3001`. Both ports must be free. The API launcher seeds a
+temporary MongoDB replica set, which may download a MongoDB binary on the first
+run. Playwright runs the [resource directory](e2e/resource-directory.feature) and
+[reservation](e2e/scenarios/reservation.feature) scenarios in Chromium, Firefox,
+and WebKit. The reservation scenarios check a pending booking and rejection of an
+overlapping request from a different student.
+
 ## Interactive booking flow
 
 1. Enter the MongoDB identifier of an existing student in **Current student** and
@@ -127,8 +144,8 @@ server can still finish after a selection change and will refresh the dashboard.
 With a running backend and MongoDB replica set, manually verify: filter resources;
 submit missing/equal/reversed times; create a booking; attempt an overlapping
 booking; cancel and confirm removal; switch student and confirm the list changes;
-stop the backend and check error/retry behavior. Automated tests cover API requests,
-error contracts, local-time conversion, validation, and dashboard selection; they
-do not exercise browser interactions or the live database. The separate
+stop the backend and check error/retry behavior. The Node tests cover API requests,
+error contracts, local-time conversion, validation, and dashboard selection.
+Playwright checks resource filtering and booking in a browser against the live test API. The separate
 [Part 3 audit](../docs/lab5-state-audit.md) records a real browser double-booking
 test, fault-injection checks, backend integration results, and a screenshot.

@@ -12,5 +12,10 @@
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/explicit-function-return-type": "error"
   },
-  "overrides": [{ "files": ["vite.config.ts", "tests/**/*.ts"], "env": { "node": true } }]
+  "overrides": [
+    {
+      "files": ["vite.config.ts", "playwright.config.ts", "tests/**/*.ts", "e2e/**/*.ts"],
+      "env": { "node": true }
+    }
+  ]
 }

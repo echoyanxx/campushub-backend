@@ -1,0 +1,9 @@
+{
+  "students": {
+    "roomRequester": "000000000000000000000101",
+    "printerOwner": "000000000000000000000102",
+    "printerRequester": "000000000000000000000103"
+  },
+  "studyRoom": { "id": "000000000000000000000201", "name": "Study Room 302" },
+  "printer": { "id": "000000000000000000000202", "name": "3D Printer A" }
+}
